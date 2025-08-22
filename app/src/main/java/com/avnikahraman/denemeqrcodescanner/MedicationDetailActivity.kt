@@ -1,20 +1,43 @@
 package com.avnikahraman.denemeqrcodescanner
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MedicationDetailActivity : AppCompatActivity() {
+
+    private lateinit var tvName: TextView
+    private lateinit var tvDescription: TextView
+    private lateinit var tvDosage: TextView
+    private lateinit var tvSideEffects: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_medication_detail)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+
+        tvName = findViewById(R.id.tvName)
+        tvDescription = findViewById(R.id.tvDescription)
+        tvDosage = findViewById(R.id.tvDosage)
+        tvSideEffects = findViewById(R.id.tvSideEffects)
+
+        val medicationId = intent.getStringExtra("medicationId") ?: return
+        fetchMedicationDetail(medicationId)
+    }
+
+    private fun fetchMedicationDetail(medicationId: String) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("medications")
+            .document(medicationId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    tvName.text = document.getString("name")
+                    tvDescription.text = document.getString("description")
+                    tvDosage.text = document.getString("dosage")
+                    tvSideEffects.text = document.getString("sideEffects")
+                }
+            }
     }
 }
+

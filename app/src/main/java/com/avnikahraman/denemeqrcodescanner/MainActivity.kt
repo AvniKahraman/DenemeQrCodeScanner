@@ -1,5 +1,6 @@
 package com.avnikahraman.denemeqrcodescanner
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -22,6 +23,13 @@ class MainActivity : AppCompatActivity() {
 
         initVars()
         registerUiListener()
+
+        val button = findViewById<Button>(R.id.Medication)
+        button.setOnClickListener {
+            val intent = Intent(this, MedicationListActivity::class.java)
+            startActivity(intent)
+        }
+
     }
 
     private fun initVars() {
