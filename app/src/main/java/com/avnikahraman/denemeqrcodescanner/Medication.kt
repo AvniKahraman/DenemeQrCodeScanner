@@ -1,7 +1,7 @@
 package com.avnikahraman.denemeqrcodescanner
 
 data class Medication(
-    val id: String = "",
+    var id: String = "",
     val name: String = "",
     val description: String = "",
     val dosage: String = "",
