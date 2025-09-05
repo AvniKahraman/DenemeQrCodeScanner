@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanner
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
@@ -53,8 +54,11 @@ class MainActivity : AppCompatActivity() {
     private fun startScanning() {
         scanner.startScan()
             .addOnSuccessListener {
-                val result = it.rawValue
-                scannedValueTV.text = "Scanned Value: $result"
+                val scannedName = it.rawValue
+                scannedValueTV.text = "Scanned Value: $scannedName"
+                if (!scannedName.isNullOrEmpty()) {
+                    findMedicationByNameAndOpenDetail(scannedName)
+                }
             }
             .addOnCanceledListener {
                 Toast.makeText(this, "Cancelled", Toast.LENGTH_SHORT).show()
@@ -63,4 +67,25 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, it.message, Toast.LENGTH_SHORT).show()
             }
     }
+    private fun findMedicationByNameAndOpenDetail(medicationName: String) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("medications")
+            .whereEqualTo("name", medicationName.lowercase())
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val doc = querySnapshot.documents[0]
+                    val medicationId = doc.id
+                    val intent = Intent(this, MedicationDetailActivity::class.java)
+                    intent.putExtra("medicationId", medicationId)
+                    startActivity(intent)
+                } else {
+                    Toast.makeText(this, "İlaç bulunamadı: $medicationName", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Firestore hatası: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
 }
