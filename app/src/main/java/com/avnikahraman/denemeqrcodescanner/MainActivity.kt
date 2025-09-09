@@ -37,10 +37,31 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, MedicationListActivity::class.java)
             startActivity(intent)
         }
+
+        val btnLogout = findViewById<Button>(R.id.btnLogout)
+        btnLogout.setOnClickListener {
+            logoutUser()
+        }
+
         supportActionBar?.show()
 
 
+
     }
+    private fun logoutUser() {
+        // Firebase Auth çıkış
+        FirebaseAuth.getInstance().signOut()
+
+        // Remember Me değerini sıfırla
+        val sharedPref = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
+        sharedPref.edit().putBoolean("rememberMe", false).apply()
+
+        // Login ekranına yönlendir
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+        finish()
+    }
+
 
     private fun initVars() {
         scanQRBtn = findViewById(R.id.scanQR)
