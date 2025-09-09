@@ -1,70 +1,67 @@
 package com.avnikahraman.denemeqrcodescanner
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
+    private lateinit var sharedPref: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login_register)
+        setContentView(R.layout.activity_login)
 
         auth = FirebaseAuth.getInstance()
+        sharedPref = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
+
+        // Eğer daha önce remember me seçildiyse otomatik login
+        val rememberMe = sharedPref.getBoolean("rememberMe", false)
+        val savedUser = auth.currentUser
+        if (rememberMe && savedUser != null) {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
 
         val etEmail = findViewById<EditText>(R.id.etEmail)
         val etPassword = findViewById<EditText>(R.id.etPassword)
+        val cbRememberMe = findViewById<CheckBox>(R.id.cbRememberMe)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
-        val btnRegister = findViewById<Button>(R.id.btnRegister)
+        val btnGoRegister = findViewById<Button>(R.id.btnGoRegister)
 
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
-
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Email ve şifre boş olamaz!", Toast.LENGTH_SHORT).show()
-            } else {
-                loginUser(email, password)
-            }
+            val remember = cbRememberMe.isChecked
+            loginUser(email, password, remember)
         }
 
-        btnRegister.setOnClickListener {
-            val email = etEmail.text.toString().trim()
-            val password = etPassword.text.toString().trim()
-
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Email ve şifre boş olamaz!", Toast.LENGTH_SHORT).show()
-            } else {
-                registerUser(email, password)
-            }
+        btnGoRegister.setOnClickListener {
+            startActivity(Intent(this, RegisterActivity::class.java))
         }
     }
 
-    private fun loginUser(email: String, password: String) {
+    private fun loginUser(email: String, password: String, remember: Boolean) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnSuccessListener {
                 Toast.makeText(this, "Login başarılı", Toast.LENGTH_SHORT).show()
+                sharedPref.edit().putBoolean("rememberMe", remember).apply()
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Login hatası: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun registerUser(email: String, password: String) {
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Kayıt başarılı", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "Kayıt hatası: ${it.message}", Toast.LENGTH_SHORT).show()
             }
     }
 }
