@@ -23,6 +23,8 @@ class MedicationDetailActivity : AppCompatActivity() {
 
         val medicationId = intent.getStringExtra("medicationId") ?: return
         fetchMedicationDetail(medicationId)
+        supportActionBar?.show()
+
     }
 
     private fun fetchMedicationDetail(medicationId: String) {

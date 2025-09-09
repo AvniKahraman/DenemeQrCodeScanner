@@ -50,6 +50,8 @@ class LoginActivity : AppCompatActivity() {
         btnGoRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
+        supportActionBar?.show()
+
     }
 
     private fun loginUser(email: String, password: String, remember: Boolean) {

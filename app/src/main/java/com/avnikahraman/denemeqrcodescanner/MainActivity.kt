@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, MedicationListActivity::class.java)
             startActivity(intent)
         }
+        supportActionBar?.show()
 
 
     }

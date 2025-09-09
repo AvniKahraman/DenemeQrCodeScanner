@@ -32,6 +32,8 @@ class RegisterActivity : AppCompatActivity() {
             val password = etPassword.text.toString().trim()
             registerUser(email, password)
         }
+        supportActionBar?.show()
+
     }
 
     private fun registerUser(email: String, password: String) {

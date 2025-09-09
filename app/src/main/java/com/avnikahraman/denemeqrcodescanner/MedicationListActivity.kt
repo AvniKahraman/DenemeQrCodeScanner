@@ -27,6 +27,7 @@ class MedicationListActivity : AppCompatActivity() {
             startActivity(intent)
         }
         recyclerView.adapter = adapter
+        supportActionBar?.show()
 
         fetchMedications()
     }
