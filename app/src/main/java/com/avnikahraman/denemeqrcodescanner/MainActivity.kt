@@ -1,10 +1,12 @@
 package com.avnikahraman.denemeqrcodescanner
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -29,93 +31,96 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
-        initVars()
-        registerUiListener()
 
-        val button = findViewById<Button>(R.id.Medication)
-        button.setOnClickListener {
-            val intent = Intent(this, MedicationListActivity::class.java)
-            startActivity(intent)
-        }
-
-        val btnLogout = findViewById<Button>(R.id.btnLogout)
-        btnLogout.setOnClickListener {
-            logoutUser()
-        }
-
-        supportActionBar?.show()
-
-
-
-    }
-    private fun logoutUser() {
-        // Firebase Auth çıkış
-        FirebaseAuth.getInstance().signOut()
-
-        // Remember Me değerini sıfırla
-        val sharedPref = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
-        sharedPref.edit().putBoolean("rememberMe", false).apply()
-
-        // Login ekranına yönlendir
-        val intent = Intent(this, LoginActivity::class.java)
-        startActivity(intent)
-        finish()
-    }
-
-
-    private fun initVars() {
         scanQRBtn = findViewById(R.id.scanQR)
         scannedValueTV = findViewById(R.id.scannedValue)
 
+        // QR tarayıcı ayarları
         val options = GmsBarcodeScannerOptions.Builder()
             .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
             .enableAutoZoom()
             .build()
-
         scanner = GmsBarcodeScanning.getClient(this, options)
-    }
 
-    private fun registerUiListener() {
+        // QR butonu
         scanQRBtn.setOnClickListener {
             startScanning()
+        }
+
+        // İlaç listesi butonları
+        val btnMyMeds = findViewById<Button>(R.id.btnMyMeds)
+        val btnAllMeds = findViewById<Button>(R.id.btnAllMeds)
+
+        btnMyMeds.setOnClickListener {
+            startActivity(Intent(this, MyMedicationActivity::class.java))
+        }
+
+        btnAllMeds.setOnClickListener {
+            startActivity(Intent(this, MedicationListActivity::class.java))
+        }
+
+        // Çıkış butonu
+        val btnLogout = findViewById<Button>(R.id.btnLogout)
+        btnLogout.setOnClickListener {
+            FirebaseAuth.getInstance().signOut()
+            val sharedPref = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
+            sharedPref.edit().putBoolean("rememberMe", false).apply()
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
         }
     }
 
     private fun startScanning() {
         scanner.startScan()
-            .addOnSuccessListener {
-                val scannedName = it.rawValue
+            .addOnSuccessListener { result ->
+                val scannedName = result.rawValue
                 scannedValueTV.text = "Scanned Value: $scannedName"
                 if (!scannedName.isNullOrEmpty()) {
-                    findMedicationByNameAndOpenDetail(scannedName)
+                    askToAddMedication(scannedName)
                 }
-            }
-            .addOnCanceledListener {
-                Toast.makeText(this, "Cancelled", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener {
-                Toast.makeText(this, it.message, Toast.LENGTH_SHORT).show()
-            }
-    }
-    private fun findMedicationByNameAndOpenDetail(medicationName: String) {
-        val db = FirebaseFirestore.getInstance()
-        db.collection("medications")
-            .whereEqualTo("name", medicationName.lowercase())
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val doc = querySnapshot.documents[0]
-                    val medicationId = doc.id
-                    val intent = Intent(this, MedicationDetailActivity::class.java)
-                    intent.putExtra("medicationId", medicationId)
-                    startActivity(intent)
-                } else {
-                    Toast.makeText(this, "İlaç bulunamadı: $medicationName", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Firestore hatası: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Hata: ${it.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
+    private fun askToAddMedication(medicationName: String) {
+        AlertDialog.Builder(this)
+            .setTitle("İlaç Ekleme")
+            .setMessage("“$medicationName” ilacını ilaçlarınıza eklemek ister misiniz?")
+            .setPositiveButton("Evet") { _: DialogInterface, _: Int ->
+                addMedicationToUser(medicationName)
+            }
+            .setNegativeButton("Hayır", null)
+            .show()
+    }
+
+    private fun addMedicationToUser(medicationName: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = FirebaseFirestore.getInstance()
+
+        // Tüm ilaçlar koleksiyonundan arıyoruz
+        db.collection("medications")
+            .whereEqualTo("name", medicationName.lowercase())
+            .get()
+            .addOnSuccessListener { result ->
+                if (!result.isEmpty) {
+                    val medDoc = result.documents[0]
+
+                    // Kullanıcının myMeds koleksiyonuna ekle
+                    db.collection("users").document(uid)
+                        .collection("myMeds")
+                        .document(medDoc.id)
+                        .set(medDoc.data!!)
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "İlaç eklendi!", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "Hata: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                } else {
+                    Toast.makeText(this, "İlaç bulunamadı!", Toast.LENGTH_SHORT).show()
+                }
+            }
+    }
 }

@@ -32,7 +32,7 @@ class RegisterActivity : AppCompatActivity() {
             val password = etPassword.text.toString().trim()
             registerUser(email, password)
         }
-        supportActionBar?.show()
+
 
     }
 

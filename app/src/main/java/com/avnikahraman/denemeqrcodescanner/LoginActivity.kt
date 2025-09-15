@@ -1,5 +1,6 @@
 package com.avnikahraman.denemeqrcodescanner
 
+import android.app.Activity
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -21,6 +22,7 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+
 
         auth = FirebaseAuth.getInstance()
         sharedPref = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
@@ -50,8 +52,8 @@ class LoginActivity : AppCompatActivity() {
         btnGoRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
-        supportActionBar?.show()
 
+        setSupportActionBar(findViewById(R.id.my_toolbar))
     }
 
     private fun loginUser(email: String, password: String, remember: Boolean) {
